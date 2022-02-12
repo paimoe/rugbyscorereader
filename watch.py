@@ -1,3 +1,15 @@
+"""
+Rugby Score Reader
+
+Read the scorebox, and time, from Stan coverage of the 2022 6N
+
+Want to keep it separate from rugbydb because of the install requirements
+
+Requires
+- PIL
+- Tesseract
+
+"""
 import sys, time
 import PIL, PIL.ImageGrab, PIL.ImageOps
 import pytesseract
@@ -5,10 +17,7 @@ import pytesseract
 #import numpy as np
 import re
 import string
-
-#from reader import reader
-
-# Text detection
+from typing import Union
 
 print("#" * 20)
 print("# MAKE SURE CHROME IS MAXIMISED ON THE LEFT SCREEN")
@@ -21,7 +30,16 @@ score_box = (430,200,805,265)
 # valid regexes
 re_full = re.compile("(?P<mins>\d{2})\:(?P<secs>\d{2})\s+(?P<home>\w{3})\s+(?P<score_h>\d+)\-(?P<score_a>\d+)\s+(?P<away>\w{3})")
 
-def scorebox_parse(im):
+# sanity settings
+allowed_teams = ["FRA", "IRE"] # pulled from db
+
+def sanity_check(items: dict) -> Union[bool, dict]:
+    """
+    make sure our numbers make some sense, so mins 0-95 etc
+    """
+    return True
+
+def scorebox_parse(im: PIL.Image.Image) -> Union[int, dict]:
     text = pytesseract.image_to_string(im).strip()
     if not text or text == "":
         return False
@@ -38,20 +56,33 @@ def scorebox_parse(im):
     if len(m.groups()) == 6:
         # Found all the info we need
         items = m.groupdict()
-        items.update({
-            "print": f'Time={items["mins"]}:{items["secs"]}, {items["home"]}={items["score_h"]} and {items["away"]}={items["score_a"]}'
-        })
-        return items
+        if sanity_check(items) is True:
+            items.update({
+                "print": f'Time={items["mins"]}:{items["secs"]}, {items["home"]}={items["score_h"]} and {items["away"]}={items["score_a"]}'
+            })
+            return items
+        else:
+            return False # TODO return the reason for this
     else:
         return False
-    # print(len(m.groups()), m.groupdict())
-    # print(dir(m))
 
+def send_to_api(payload: dict) -> bool:
+    """
+    send payload to the api to update the time and scores (if a valid payload)
 
-def watch():
+    will also obviously be checked on the api side
+    """
+    pass
+
+def watch() -> None:
+    """
+    Called every 5s for now
+
+    Grabs the portion of the scorebox
+    """
     
     im = PIL.ImageGrab.grab(score_box).convert("RGB")
-    im_inv = PIL.ImageOps.invert(im)
+    #im_inv = PIL.ImageOps.invert(im)
 
     score = scorebox_parse(im)
     if not score:
