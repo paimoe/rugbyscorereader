@@ -1,0 +1,9 @@
+{
+    "stan_6n22_chrome": {
+        "bbox": {
+            "window": [60,130,1920,1200],
+            "score": [430,200,805,265]
+        },
+        "re_full": "(?P<mins>\\d{2})\\:(?P<secs>\\d{2})\\s+(?P<home>\\w{3})\\s+(?P<score_h>\\d+)\\-(?P<score_a>\\d+)\\s+(?P<away>\\w{3})"
+    }
+}

@@ -1,15 +1,3 @@
-"""
-Rugby Score Reader
-
-Read the scorebox, and time, from Stan coverage of the 2022 6N
-
-Want to keep it separate from rugbydb because of the install requirements
-
-Requires
-- PIL
-- Tesseract
-
-"""
 import sys, time
 import PIL, PIL.ImageGrab, PIL.ImageOps
 import pytesseract
@@ -17,18 +5,19 @@ import pytesseract
 #import numpy as np
 import re
 import string
+import json
 from typing import Union
 
 print("#" * 20)
 print("# MAKE SURE CHROME IS MAXIMISED ON THE LEFT SCREEN")
 print("#" * 20)
 
-# TODO see if we can get the coordinates of the chrome window, (will be useful for exapunks minigame solver)
-chrome_box = (60,130,1920,1200)
-score_box = (430,200,805,265)
+with open("config.json", "r") as f:
+    config = json.load(f)
+    config = config["stan_6n22_chrome"] # Current configuration we're using
 
 # valid regexes
-re_full = re.compile("(?P<mins>\d{2})\:(?P<secs>\d{2})\s+(?P<home>\w{3})\s+(?P<score_h>\d+)\-(?P<score_a>\d+)\s+(?P<away>\w{3})")
+re_full = re.compile(config["re_full"])
 
 # sanity settings
 allowed_teams = ["FRA", "IRE"] # pulled from db
@@ -74,14 +63,14 @@ def send_to_api(payload: dict) -> bool:
     """
     pass
 
-def watch() -> None:
+def watch(bbox: list) -> None:
     """
     Called every 5s for now
 
     Grabs the portion of the scorebox
     """
     
-    im = PIL.ImageGrab.grab(score_box).convert("RGB")
+    im = PIL.ImageGrab.grab(bbox).convert("RGB")
     #im_inv = PIL.ImageOps.invert(im)
 
     score = scorebox_parse(im)
@@ -113,9 +102,11 @@ if __name__ == "__main__":
     else:
         mid = int(sys.argv[1])
 
+    use_bbox = config["bbox"]["score"]
+
     while True:
         try:
-            watch()
+            watch(bbox=use_bbox)
             time.sleep(5)
         except KeyboardInterrupt:
             break
